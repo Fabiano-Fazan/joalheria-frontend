@@ -21,13 +21,18 @@ export async function compressImage(file: File): Promise<File> {
     throw new Error('Selecione um arquivo de imagem válido.');
   }
 
+  // Se o arquivo for menor que 800KB, não precisa comprimir agressivamente no celular
+  if (file.size < 0.8 * 1024 * 1024) {
+    return file;
+  }
+
   const shouldUseWebP = canUseWebP();
 
   try {
     const compressedBlob = await imageCompression(file, {
       maxSizeMB: MAX_IMAGE_SIZE_MB,
       maxWidthOrHeight: MAX_IMAGE_WIDTH_OR_HEIGHT,
-      useWebWorker: true,
+      useWebWorker: false, // Desativado para evitar crashes em navegadores móveis
       fileType: shouldUseWebP ? 'image/webp' : file.type,
       initialQuality: IMAGE_QUALITY,
     });
@@ -40,7 +45,12 @@ export async function compressImage(file: File): Promise<File> {
       lastModified: Date.now(),
     });
   } catch (error) {
-    console.error(error);
-    throw new Error('Não foi possível comprimir essa imagem. Tente outra foto ou um formato diferente.');
+    console.warn('Falha na compressão, enviando arquivo original:', error);
+    // Fallback: Se a compressão falhar (comum em celulares), envia o arquivo original
+    // desde que seja menor que 10MB (limite do backend)
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('A imagem é muito grande. Tente uma foto menor que 10MB.');
+    }
+    return file;
   }
 }
