@@ -26,28 +26,40 @@ export function AddProductPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log(`[Upload] Slot ${index} selecionado: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+
+    // 1. Mostrar preview IMEDIATAMENTE (antes da compressão para ser rápido no celular)
+    const reader = new FileReader();
+    reader.onload = () => {
+      console.log(`[Preview] Gerando visualização para slot ${index}...`);
+      setImagePreviews(prev => {
+        const next = [...prev];
+        next[index] = reader.result as string;
+        return next;
+      });
+    };
+    reader.onerror = () => console.error(`[Preview] Erro ao ler arquivo no slot ${index}`);
+    reader.readAsDataURL(file);
+
     setCompressingIndex(index);
 
     try {
+      console.log(`[Compressão] Iniciando para slot ${index}...`);
       const compressedFile = await compressImage(file);
-      
-      // Gerar prévia como Data URL (Base64) - muito mais estável em celulares
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const nextPreviews = [...imagePreviews];
-        nextPreviews[index] = reader.result as string;
-        setImagePreviews(nextPreviews);
-      };
-      reader.readAsDataURL(compressedFile);
+      console.log(`[Compressão] Concluída para slot ${index}. Novo tamanho: ${(compressedFile.size / 1024).toFixed(2)} KB`);
 
-      const nextImages = [...images];
-      nextImages[index] = compressedFile;
-      setImages(nextImages);
+      setImages(prev => {
+        const next = [...prev];
+        next[index] = compressedFile;
+        return next;
+      });
     } catch (error) {
-      console.error(error);
-      setDialog({
-        title: 'Imagem não enviada',
-        message: error instanceof Error ? error.message : 'Não foi possível processar essa imagem.',
+      console.warn(`[Compressão] Falhou no slot ${index}, usando original:`, error);
+      // Se a compressão falhar, usamos o original (já garantimos isso no imageCompression.ts)
+      setImages(prev => {
+        const next = [...prev];
+        next[index] = file;
+        return next;
       });
     } finally {
       event.target.value = '';
