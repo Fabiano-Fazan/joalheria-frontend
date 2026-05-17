@@ -70,10 +70,12 @@ export function StorefrontProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('Verificando autenticação...');
         const data = await fetchCurrentUser();
+        console.log('Dados recebidos do auth/me:', data);
         setIsApiOnline(true);
 
-        if (data.authenticated) {
+        if (data && data.authenticated) {
           setIsLoggedIn(true);
           setUser(data);
           setIsAdmin(data.role === 'ROLE_ADMIN');
@@ -82,12 +84,15 @@ export function StorefrontProvider({ children }: { children: React.ReactNode }) 
           setUser(null);
           setIsAdmin(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
         setIsApiOnline(false);
       }
     };
 
-    checkAuth();
+    // Pequeno atraso para garantir que o cookie foi processado após o redirect
+    const timeout = setTimeout(checkAuth, 500);
+    return () => clearTimeout(timeout);
   }, []);
 
   const navigateTo = (view: StoreView) => {
