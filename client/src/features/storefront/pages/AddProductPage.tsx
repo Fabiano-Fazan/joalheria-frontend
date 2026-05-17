@@ -26,41 +26,38 @@ export function AddProductPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log(`[Upload] Slot ${index} selecionado: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+    console.log(`[Upload] Slot ${index} selecionado: ${file.name}`);
 
-    // 1. Mostrar preview IMEDIATAMENTE (antes da compressão para ser rápido no celular)
-    const reader = new FileReader();
-    reader.onload = () => {
-      console.log(`[Preview] Gerando visualização para slot ${index}...`);
-      setImagePreviews(prev => {
-        const next = [...prev];
-        next[index] = reader.result as string;
-        return next;
-      });
-    };
-    reader.onerror = () => console.error(`[Preview] Erro ao ler arquivo no slot ${index}`);
-    reader.readAsDataURL(file);
+    // 1. Salva o arquivo ORIGINAL imediatamente (Garante que a foto vá, mesmo se a compressão travar)
+    setImages(prev => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+
+    // 2. Mostrar preview IMEDIATAMENTE (usando URL temporária que é mais leve que Base64)
+    const objectUrl = URL.createObjectURL(file);
+    setImagePreviews(prev => {
+      const next = [...prev];
+      next[index] = objectUrl;
+      return next;
+    });
 
     setCompressingIndex(index);
 
     try {
-      console.log(`[Compressão] Iniciando para slot ${index}...`);
+      console.log(`[Compressão] Tentando otimizar slot ${index}...`);
       const compressedFile = await compressImage(file);
-      console.log(`[Compressão] Concluída para slot ${index}. Novo tamanho: ${(compressedFile.size / 1024).toFixed(2)} KB`);
-
+      
+      // 3. Se a compressão der certo, SUBSTITUI o original pelo comprimido
       setImages(prev => {
         const next = [...prev];
         next[index] = compressedFile;
         return next;
       });
+      console.log(`[Compressão] Slot ${index} otimizado com sucesso.`);
     } catch (error) {
-      console.warn(`[Compressão] Falhou no slot ${index}, usando original:`, error);
-      // Se a compressão falhar, usamos o original (já garantimos isso no imageCompression.ts)
-      setImages(prev => {
-        const next = [...prev];
-        next[index] = file;
-        return next;
-      });
+      console.warn(`[Compressão] Slot ${index} usará original devido a falha:`, error);
     } finally {
       event.target.value = '';
       setCompressingIndex(null);
