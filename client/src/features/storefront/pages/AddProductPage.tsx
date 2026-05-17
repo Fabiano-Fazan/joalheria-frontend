@@ -22,17 +22,6 @@ export function AddProductPage() {
   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>([null, null, null, null]);
   const [compressingIndex, setCompressingIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    const previews = images.map((image) => (image ? URL.createObjectURL(image) : null));
-    setImagePreviews(previews);
-
-    return () => {
-      previews.forEach((preview) => {
-        if (preview) URL.revokeObjectURL(preview);
-      });
-    };
-  }, [images]);
-
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -41,6 +30,16 @@ export function AddProductPage() {
 
     try {
       const compressedFile = await compressImage(file);
+      
+      // Gerar prévia como Data URL (Base64) - muito mais estável em celulares
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const nextPreviews = [...imagePreviews];
+        nextPreviews[index] = reader.result as string;
+        setImagePreviews(nextPreviews);
+      };
+      reader.readAsDataURL(compressedFile);
+
       const nextImages = [...images];
       nextImages[index] = compressedFile;
       setImages(nextImages);
@@ -48,7 +47,7 @@ export function AddProductPage() {
       console.error(error);
       setDialog({
         title: 'Imagem não enviada',
-        message: error instanceof Error ? error.message : 'Não foi possível comprimir essa imagem.',
+        message: error instanceof Error ? error.message : 'Não foi possível processar essa imagem.',
       });
     } finally {
       event.target.value = '';
@@ -64,7 +63,7 @@ export function AddProductPage() {
       if (compressingIndex !== null) {
         setDialog({
           title: 'Aguarde a imagem',
-          message: 'Aguarde a compressão da imagem terminar antes de salvar.',
+          message: 'Aguarde o processamento da imagem terminar antes de salvar.',
         });
         return;
       }
@@ -101,6 +100,7 @@ export function AddProductPage() {
       });
       setFormData({ nome: '', descricao: '', cor: '', categoria: '', preco: '', quantidade: '', destaque: false, inativo: false });
       setImages([null, null, null, null]);
+      setImagePreviews([null, null, null, null]); // Limpa as prévias também
     } catch (error) {
       console.error(error);
       setDialog({
