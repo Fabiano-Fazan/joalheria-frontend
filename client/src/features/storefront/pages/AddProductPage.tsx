@@ -89,35 +89,60 @@ export function AddProductPage() {
       }
       const selectedImages = images.filter((image): image is File => Boolean(image));
 
+      // Sanitização rigorosa para mobile: remove qualquer coisa que não seja número, ponto ou vírgula
+      const cleanPrice = String(formData.preco).replace(/[^\d.,]/g, '').replace(',', '.');
+      const cleanStock = String(formData.quantidade).replace(/[^\d]/g, '');
+
       const produtoInfo = {
-        nome: formData.nome,
-        descricao: formData.descricao,
-        cor: formData.cor,
-        categoria: formData.categoria,
-        preco: parseFloat(String(formData.preco).replace(',', '.')),
-        quantidade: formData.quantidade === '' ? 0 : parseInt(formData.quantidade, 10),
+        nome: formData.nome.trim(),
+        descricao: formData.descricao.trim(),
+        cor: formData.cor.trim(),
+        categoria: formData.categoria.trim(),
+        preco: parseFloat(cleanPrice) || 0,
+        quantidade: cleanStock === '' ? 0 : parseInt(cleanStock, 10),
         destaque: formData.destaque,
         inativo: formData.inativo,
       };
+
+      if (isNaN(produtoInfo.preco) || produtoInfo.preco <= 0) {
+        throw new Error('O preço informado é inválido. Use apenas números e ponto/vírgula.');
+      }
 
       await createProduct({
         product: produtoInfo,
         images: selectedImages,
         mainImageIndex: 0,
       });
+
       setDialog({
         title: 'Produto cadastrado',
         message: 'O produto foi adicionado ao catálogo com sucesso.',
         variant: 'success',
       });
+      
       setFormData({ nome: '', descricao: '', cor: '', categoria: '', preco: '', quantidade: '', destaque: false, inativo: false });
       setImages([null, null, null, null]);
-      setImagePreviews([null, null, null, null]); // Limpa as prévias também
-    } catch (error) {
-      console.error(error);
+      setImagePreviews([null, null, null, null]);
+    } catch (error: any) {
+      console.error('Erro detalhado no cadastro:', error);
+      
+      let errorMessage = 'Não foi possível cadastrar o produto.';
+      
+      if (error.status === 403) {
+        errorMessage = 'Sua sessão expirou ou você não tem permissão de Admin. Tente sair e entrar novamente.';
+      } else if (error.status === 400) {
+        errorMessage = 'Algum campo está inválido. Verifique o preço e a categoria.';
+        if (error.details) {
+          console.log('Detalhes do erro 400:', error.details);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setDialog({
-        title: 'Produto não cadastrado',
-        message: 'Não foi possível cadastrar o produto. Confira se você está logado como admin e se todos os campos estão válidos.',
+        title: 'Erro no Cadastro',
+        message: errorMessage,
+        variant: 'danger'
       });
     } finally {
       setLoading(false);
