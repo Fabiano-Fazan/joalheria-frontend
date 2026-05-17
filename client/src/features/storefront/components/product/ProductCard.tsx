@@ -59,6 +59,11 @@ export function ProductCard({ product, index = 0, onEdit, onZoomChange }: Produc
         <h3 className={`font-medium ${colors.textNavy} text-[13px] sm:text-sm text-center leading-tight flex-grow flex items-center justify-center min-h-[40px] sm:min-h-[42px] line-clamp-2`}>
           {product.name}
         </h3>
+        {product.descricao && (
+          <p className="text-[10px] sm:text-[11px] text-gray-500 text-center line-clamp-2 mt-1 mb-1 px-1 leading-relaxed opacity-80">
+            {product.descricao}
+          </p>
+        )}
         <p className={`${colors.textGoldDark} text-base sm:text-lg font-semibold mt-1 sm:mt-2`}>{product.price}</p>
         {isAdmin && product.inativo && (
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-600">

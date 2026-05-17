@@ -7,7 +7,7 @@ import { createOrder } from '../services/orders';
 import { StoreDialog } from '../components/feedback/StoreDialog';
 
 export function CartPage() {
-  const [isGift, setIsGift] = useState(false);
+  const [observations, setObservations] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialog, setDialog] = useState<{ title: string; message: string; variant?: 'info' | 'success' | 'danger' } | null>(null);
   const { cartItems, user, isLoggedIn, updateQuantity, removeFromCart, clearCart, navigateTo, handleLogin } = useStorefront();
@@ -33,7 +33,7 @@ export function CartPage() {
         produtoNome: item.name,
         preco: item.numPrice,
       })),
-      observacoes: isGift ? 'Embrulhar para presente' : '',
+      observacoes: observations.trim(),
     };
 
     try {
@@ -87,6 +87,7 @@ export function CartPage() {
                   <div className="flex-1 min-w-0 text-left flex flex-col justify-center">
                     <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{item.category}</span>
                     <h3 className={`font-medium ${colors.textNavy} text-sm sm:text-lg leading-tight mt-1 mb-1 sm:mb-2 line-clamp-2`}>{item.name}</h3>
+                    {item.descricao && <p className="text-xs text-gray-500 line-clamp-2 mb-2">{item.descricao}</p>}
                     <p className={`${colors.textGoldDark} font-bold text-sm sm:text-base`}>{formatCurrency(item.numPrice)}</p>
                   </div>
                 </div>
@@ -112,10 +113,16 @@ export function CartPage() {
                 <div className="flex justify-between items-center"><span className={`font-medium ${colors.textNavy}`}>Total</span><span className={`text-2xl font-bold ${colors.textGoldDark}`}>{formatCurrency(total)}</span></div>
                 <p className="text-xs text-gray-400 mt-2 text-right">Sem taxas de frete inclusas.</p>
               </div>
-              <label className="flex items-center gap-3 mb-8 cursor-pointer p-3 bg-[#FAF8F4] rounded-2xl border border-[#E8E0D3] hover:bg-[#F7F2E8] transition-colors">
-                <input type="checkbox" checked={isGift} onChange={(event) => setIsGift(event.target.checked)} className="w-5 h-5 rounded border-gray-300 text-[#9A6A1E] focus:ring-[#9A6A1E]" />
-                <span className={`text-sm font-medium ${colors.textNavy}`}>Embrulhar para presente</span>
-              </label>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações do Pedido</label>
+                <textarea
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  placeholder="Ex: Tamanho do aro, observações de entrega..."
+                  rows={3}
+                  className="w-full rounded-2xl border border-[#E8E0D3] bg-[#FAF8F4] p-3 text-sm focus:outline-none focus:border-[#B88A2E] focus:ring-1 focus:ring-[#B88A2E] transition-all resize-none"
+                />
+              </div>
               <button onClick={handleCheckout} disabled={isSubmitting} className="flex w-full items-center justify-center gap-2 rounded-full border border-[#B88A2E]/35 bg-[#F7F2E8] px-6 py-4 text-base font-semibold tracking-[0.04em] text-[#8F6720] shadow-sm transition-[background-color,border-color,color,box-shadow,transform] hover:border-[#B88A2E]/55 hover:bg-[#EFE6D4] hover:text-[#6F4A16] hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60">
                 <Send className="w-5 h-5" />{isSubmitting ? 'Processando...' : isLoggedIn ? 'Criar pedido' : 'Entrar para finalizar'}
               </button>

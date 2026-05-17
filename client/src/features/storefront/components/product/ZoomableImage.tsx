@@ -47,9 +47,9 @@ export function ZoomableImage({ src, alt, className = '', onZoomChange }: Zoomab
     const rect = imgRef.current?.getBoundingClientRect();
     if (!rect) return {};
 
-    const padding = 12;
-    const targetWidth = Math.min(rect.width * 1.42, window.innerWidth - padding * 2);
-    const targetHeight = Math.min(rect.height * 1.42, window.innerHeight - padding * 2);
+    const padding = 8; // Reduzi o padding para ganhar mais espaço
+    const targetWidth = Math.min(rect.width * 1.75, window.innerWidth - padding * 2); // Aumentei de 1.42 para 1.75
+    const targetHeight = Math.min(rect.height * 1.75, window.innerHeight - padding * 2); // Aumentei de 1.42 para 1.75
     const left = Math.max(padding, Math.min(window.innerWidth - targetWidth - padding, rect.left + rect.width / 2 - targetWidth / 2));
     const top = Math.max(padding, Math.min(window.innerHeight - targetHeight - padding, rect.top + rect.height / 2 - targetHeight / 2));
 

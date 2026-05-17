@@ -104,7 +104,7 @@ export function MobileMenu() {
 
         <div className={`p-4 border-t ${colors.borderLight} bg-white`}>
           {!isLoggedIn ? (
-            <button onClick={handleLogin} className="luxury-button w-full text-xs">
+            <button onClick={handleLogin} className="w-full min-h-11 flex items-center justify-center gap-2 rounded-full border border-[#B88A2E]/35 bg-[#F7F2E8] text-sm font-semibold tracking-[0.04em] text-[#8F6720] shadow-sm transition-[background-color,border-color,color,box-shadow,transform] hover:border-[#B88A2E]/55 hover:bg-[#EFE6D4] hover:text-[#6F4A16] hover:shadow-md active:scale-95">
               Entrar com Google
             </button>
           ) : (
