@@ -26,42 +26,40 @@ export function AddProductPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log(`[Upload] Slot ${index} selecionado: ${file.name}`);
-
-    // 1. Salva o arquivo ORIGINAL imediatamente (Garante que a foto vá, mesmo se a compressão travar)
+    // 1. Salva o arquivo ORIGINAL imediatamente (Garante que a foto vá)
     setImages(prev => {
       const next = [...prev];
       next[index] = file;
       return next;
     });
 
-    // 2. Mostrar preview IMEDIATAMENTE (usando URL temporária que é mais leve que Base64)
-    const objectUrl = URL.createObjectURL(file);
-    setImagePreviews(prev => {
-      const next = [...prev];
-      next[index] = objectUrl;
-      return next;
-    });
+    // 2. Gerar uma MINIATURA muito leve para o preview (evita travar a memória do celular)
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 200; // Miniatura bem pequena
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const thumbnail = canvas.toDataURL('image/jpeg', 0.5); // Baixa qualidade apenas para o preview
+        setImagePreviews(prev => {
+          const next = [...prev];
+          next[index] = thumbnail;
+          return next;
+        });
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
 
-    setCompressingIndex(index);
-
-    try {
-      console.log(`[Compressão] Tentando otimizar slot ${index}...`);
-      const compressedFile = await compressImage(file);
-      
-      // 3. Se a compressão der certo, SUBSTITUI o original pelo comprimido
-      setImages(prev => {
-        const next = [...prev];
-        next[index] = compressedFile;
-        return next;
-      });
-      console.log(`[Compressão] Slot ${index} otimizado com sucesso.`);
-    } catch (error) {
-      console.warn(`[Compressão] Slot ${index} usará original devido a falha:`, error);
-    } finally {
-      event.target.value = '';
-      setCompressingIndex(null);
-    }
+    // No celular, não vamos tentar comprimir o arquivo de upload para poupar RAM
+    // O Cloudinary/Backend cuidará disso.
+    event.target.value = '';
   };
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
